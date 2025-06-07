@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词随机生成器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#EC4899',
+                        neutral: '#1F2937',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .btn-hover {
+                transition: all 0.3s ease;
+            }
+            .btn-hover:hover {
+                transform: translateY(-2px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-light to-blue-50 min-h-screen font-sans text-neutral">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 标题区域 -->
+        <header class="text-center mb-10">
+            <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-primary mb-3 text-shadow">
+                <i class="fa fa-random mr-2"></i>单词随机生成器
+            </h1>
+            <p class="text-gray-600 text-lg">自定义单词库，随机学习，点击生成单词</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 左侧：单词库管理 -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center">
+                        <i class="fa fa-book text-secondary mr-2"></i>单词库管理
+                    </h2>
+                    <div class="mb-4">
+                        <label for="wordInput" class="block text-sm font-medium text-gray-700 mb-1">输入单词（每行一个）</label>
+                        <textarea id="wordInput" rows="8" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all" placeholder="例如：&#10;apple&#10;banana&#10;cat"></textarea>
+                        <p class="text-xs text-gray-500 mt-1">最多可输入300个单词</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button id="addWords" class="px-4 py-2 bg-primary text-white rounded-lg btn-hover flex-1">
+                            <i class="fa fa-plus mr-1"></i>添加到单词库
+                        </button>
+                        <button id="clearWords" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg btn-hover flex-1">
+                            <i class="fa fa-trash mr-1"></i>清空
+                        </button>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">已添加单词</label>
+                        <div id="wordList" class="bg-gray-50 rounded-lg p-3 h-48 overflow-y-auto text-sm">
+                            <p class="text-gray-400 italic">单词将显示在这里...</p>
+                        </div>
+                        <div class="flex justify-between items-center mt-2 text-xs text-gray-500">
+                            <span>当前单词数量：<span id="wordCount">0</span>/300</span>
+                            <button id="shuffleWords" class="text-primary hover:underline">
+                                <i class="fa fa-refresh mr-1"></i>随机排序
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 选项设置 -->
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold mb-4 flex items-center">
+                        <i class="fa fa-cog text-secondary mr-2"></i>选项设置
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">显示模式</label>
+                            <div class="flex gap-2">
+                                <label class="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg cursor-pointer">
+                                    <input type="radio" name="displayMode" value="word" checked class="accent-primary">
+                                    <span>只显示单词</span>
+                                </label>
+                                <label class="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg cursor-pointer">
+                                    <input type="radio" name="displayMode" value="random" class="accent-primary">
+                                    <span>随机大小写</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">发音提示</label>
+                            <div class="flex gap-2">
+                                <label class="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg cursor-pointer">
+                                    <input type="radio" name="pronunciation" value="none" checked class="accent-primary">
+                                    <span>不显示</span>
+                                </label>
+                                <label class="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg cursor-pointer">
+                                    <input type="radio" name="pronunciation" value="pinyin" class="accent-primary">
+                                    <span>拼音</span>
+                                </label>
+                                <label class="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg cursor-pointer">
+                                    <input type="radio" name="pronunciation" value="phonetic" class="accent-primary">
+                                    <span>音标</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">自动播放发音</label>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="autoPronounce" class="w-4 h-4 accent-primary">
+                                <label for="autoPronounce" class="ml-2 text-sm text-gray-700">启用</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：单词展示 -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl p-8 card-shadow h-full flex flex-col">
+                    <h2 class="text-xl font-bold mb-6 flex items-center">
+                        <i class="fa fa-eye text-secondary mr-2"></i>当前单词
+                    </h2>
+                    
+                    <div class="flex-1 flex flex-col items-center justify-center">
+                        <div id="wordDisplay" class="text-[clamp(2rem,8vw,4rem)] font-bold text-center mb-6 text-primary transition-all duration-300 opacity-0">
+                            点击下方按钮开始
+                        </div>
+                        <div id="pronunciationDisplay" class="text-xl text-center text-gray-600 mb-8 opacity-0">
+                            发音将显示在这里
+                        </div>
+                        
+                        <button id="generateWord" class="px-8 py-4 bg-secondary text-white rounded-xl text-lg font-semibold shadow-lg btn-hover flex items-center">
+                            <i class="fa fa-magic mr-2"></i>生成新单词
+                        </button>
+                        
+                        <div class="mt-8 flex gap-4 justify-center">
+                            <button id="prevWord" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg btn-hover">
+                                <i class="fa fa-chevron-left mr-1"></i>上一个
+                            </button>
+                            <button id="nextWord" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg btn-hover">
+                                下一个<i class="fa fa-chevron-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 pt-6 border-t border-gray-100">
+                        <h3 class="font-medium text-gray-700 mb-3">学习进度</h3>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">已学习单词</span>
+                            <span class="text-sm font-medium" id="progressCount">0/0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="progressBar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>© 2025 单词随机生成器 | 让学习更有趣</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 单词库和状态管理
+            let wordList = [];
+            let currentIndex = -1;
+            let usedWords = [];
+            
+            // DOM 元素
+            const wordInput = document.getElementById('wordInput');
+            const addWordsBtn = document.getElementById('addWords');
+            const clearWordsBtn = document.getElementById('clearWords');
+            const wordListElement = document.getElementById('wordList');
+            const wordCountElement = document.getElementById('wordCount');
+            const generateWordBtn = document.getElementById('generateWord');
+            const wordDisplay = document.getElementById('wordDisplay');
+            const pronunciationDisplay = document.getElementById('pronunciationDisplay');
+            const prevWordBtn = document.getElementById('prevWord');
+            const nextWordBtn = document.getElementById('nextWord');
+            const shuffleWordsBtn = document.getElementById('shuffleWords');
+            const progressCount = document.getElementById('progressCount');
+            const progressBar = document.getElementById('progressBar');
+            const autoPronounceCheckbox = document.getElementById('autoPronounce');
+            
+            // 加载本地存储的单词库
+            const savedWords = localStorage.getItem('vocabularyList');
+            if (savedWords) {
+                wordList = JSON.parse(savedWords);
+                updateWordListDisplay();
+            }
+            
+            // 添加单词到单词库
+            addWordsBtn.addEventListener('click', function() {
+                const words = wordInput.value.split('\n')
+                    .map(word => word.trim())
+                    .filter(word => word.length > 0);
+                
+                if (words.length === 0) {
+                    alert('请输入至少一个单词');
+                    return;
+                }
+                
+                // 检查是否超过最大数量
+                if (wordList.length + words.length > 300) {
+                    alert('单词库最多只能包含300个单词');
+                    return;
+                }
+                
+                // 去重
+                const newWords = words.filter(word => !wordList.includes(word));
+                wordList = [...wordList, ...newWords];
+                
+                // 保存到本地存储
+                localStorage.setItem('vocabularyList', JSON.stringify(wordList));
+                
+                // 更新显示
+                updateWordListDisplay();
+                wordInput.value = '';
+                
+                // 显示成功提示
+                showNotification(`成功添加 ${newWords.length} 个单词`);
+            });
+            
+            // 清空单词库
+            clearWordsBtn.addEventListener('click', function() {
+                if (confirm('确定要清空单词库吗？')) {
+                    wordList = [];
+                    localStorage.removeItem('vocabularyList');
+                    updateWordListDisplay();
+                }
+            });
+            
+            // 随机生成单词
+            generateWordBtn.addEventListener('click', function() {
+                if (wordList.length === 0) {
+                    alert('请先添加单词到单词库');
+                    return;
+                }
+                
+                // 显示动画效果
+                wordDisplay.classList.add('opacity-0');
+                pronunciationDisplay.classList.add('opacity-0');
+                
+                setTimeout(() => {
+                    // 随机选择一个单词（确保不重复）
+                    if (usedWords.length === wordList.length) {
+                        usedWords = []; // 重置已使用单词
+                    }
+                    
+                    let randomIndex;
+                    do {
+                        randomIndex = Math.floor(Math.random() * wordList.length);
+                    } while (usedWords.includes(randomIndex));
+                    
+                    currentIndex = randomIndex;
+                    usedWords.push(currentIndex);
+                    
+                    // 显示单词
+                    const displayMode = document.querySelector('input[name="displayMode"]:checked').value;
+                    let wordToDisplay = wordList[currentIndex];
+                    
+                    if (displayMode === 'random') {
+                        wordToDisplay = wordToDisplay.split('').map(char => {
+                            return Math.random() > 0.5 ? char.toUpperCase() : char.toLowerCase();
+                        }).join('');
+                    }
+                    
+                    wordDisplay.textContent = wordToDisplay;
+                    wordDisplay.classList.remove('opacity-0');
+                    
+                    // 显示发音
+                    const pronunciationMode = document.querySelector('input[name="pronunciation"]:checked').value;
+                    if (pronunciationMode === 'none') {
+                        pronunciationDisplay.textContent = '';
+                        pronunciationDisplay.classList.add('opacity-0');
+                    } else {
+                        // 这里只是示例发音，实际应用中可能需要更复杂的发音生成
+                        let pronunciation = '';
+                        if (pronunciationMode === 'pinyin') {
+                            // 简单拼音示例（实际需要更复杂的转换）
+                            pronunciation = generateMockPinyin(wordToDisplay);
+                        } else if (pronunciationMode === 'phonetic') {
+                            // 简单音标示例（实际需要更复杂的转换）
+                            pronunciation = generateMockPhonetic(wordToDisplay);
+                        }
+                        
+                        pronunciationDisplay.textContent = pronunciation;
+                        pronunciationDisplay.classList.remove('opacity-0');
+                    }
+                    
+                    // 自动播放发音
+                    if (autoPronounceCheckbox.checked) {
+                        playWordPronunciation(wordToDisplay);
+                    }
+                    
+                    // 更新进度
+                    updateProgress();
+                }, 300);
+            });
+            
+            // 上一个单词
+            prevWordBtn.addEventListener('click', function() {
+                if (usedWords.length === 0) return;
+                
+                const currentPos = usedWords.indexOf(currentIndex);
+                if (currentPos > 0) {
+                    currentIndex = usedWords[currentPos - 1];
+                    showCurrentWord();
+                }
+            });
+            
+            // 下一个单词（历史记录中的）
+            nextWordBtn.addEventListener('click', function() {
+                if (usedWords.length === 0) return;
+                
+                const currentPos = usedWords.indexOf(currentIndex);
+                if (currentPos < usedWords.length - 1) {
+                    currentIndex = usedWords[currentPos + 1];
+                    showCurrentWord();
+                }
+            });
+            
+            // 随机排序单词库
+            shuffleWordsBtn.addEventListener('click', function() {
+                if (wordList.length === 0) return;
+                
+                // Fisher-Yates 洗牌算法
+                for (let i = wordList.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [wordList[i], wordList[j]] = [wordList[j], wordList[i]];
+                }
+                
+                // 保存到本地存储
+                localStorage.setItem('vocabularyList', JSON.stringify(wordList));
+                
+                // 更新显示
+                updateWordListDisplay();
+                showNotification('单词库已随机排序');
+            });
+            
+            // 显示当前单词
+            function showCurrentWord() {
+                if (currentIndex === -1 || !wordList[currentIndex]) return;
+                
+                // 显示动画效果
+                wordDisplay.classList.add('opacity-0');
+                pronunciationDisplay.classList.add('opacity-0');
+                
+                setTimeout(() => {
+                    // 显示单词
+                    const displayMode = document.querySelector('input[name="displayMode"]:checked').value;
+                    let wordToDisplay = wordList[currentIndex];
+                    
+                    if (displayMode === 'random') {
+                        wordToDisplay = wordToDisplay.split('').map(char => {
+                            return Math.random() > 0.5 ? char.toUpperCase() : char.toLowerCase();
+                        }).join('');
+                    }
+                    
+                    wordDisplay.textContent = wordToDisplay;
+                    wordDisplay.classList.remove('opacity-0');
+                    
+                    // 显示发音
+                    const pronunciationMode = document.querySelector('input[name="pronunciation"]:checked').value;
+                    if (pronunciationMode === 'none') {
+                        pronunciationDisplay.textContent = '';
+                        pronunciationDisplay.classList.add('opacity-0');
+                    } else {
+                        let pronunciation = '';
+                        if (pronunciationMode === 'pinyin') {
+                            pronunciation = generateMockPinyin(wordToDisplay);
+                        } else if (pronunciationMode === 'phonetic') {
+                            pronunciation = generateMockPhonetic(wordToDisplay);
+                        }
+                        
+                        pronunciationDisplay.textContent = pronunciation;
+                        pronunciationDisplay.classList.remove('opacity-0');
+                    }
+                    
+                    // 更新进度
+                    updateProgress();
+                }, 300);
+            }
+            
+            // 更新单词列表显示
+            function updateWordListDisplay() {
+                wordListElement.innerHTML = '';
+                wordCountElement.textContent = wordList.length;
+                
+                if (wordList.length === 0) {
+                    wordListElement.innerHTML = '<p class="text-gray-400 italic">单词将显示在这里...</p>';
+                    return;
+                }
+                
+                const fragment = document.createDocumentFragment();
+                wordList.forEach((word, index) => {
+                    const wordItem = document.createElement('div');
+                    wordItem.className = 'flex justify-between items-center py-1 border-b border-gray-100 last:border-0';
+                    wordItem.innerHTML = `
+                        <span>${word}</span>
+                        <button class="delete-word text-gray-400 hover:text-red-500" data-index="${index}">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    `;
+                    fragment.appendChild(wordItem);
+                });
+                
+                wordListElement.appendChild(fragment);
+                
+                // 添加删除单词事件
+                document.querySelectorAll('.delete-word').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        wordList.splice(index, 1);
+                        
+                        // 保存到本地存储
+                        localStorage.setItem('vocabularyList', JSON.stringify(wordList));
+                        
+                        // 更新显示
+                        updateWordListDisplay();
+                        
+                        // 如果删除的是当前显示的单词，重置当前索引
+                        if (index === currentIndex) {
+                            currentIndex = -1;
+                            wordDisplay.textContent = '点击下方按钮开始';
+                            pronunciationDisplay.textContent = '';
+                            pronunciationDisplay.classList.add('opacity-0');
+                        } else if (index < currentIndex) {
+                            currentIndex--;
+                        }
+                        
+                        // 更新进度
+                        updateProgress();
+                    });
+                });
+            }
+            
+            // 更新学习进度
+            function updateProgress() {
+                const total = wordList.length;
+                const learned = usedWords.length;
+                
+                progressCount.textContent = `${learned}/${total}`;
+                progressBar.style.width = total > 0 ? `${(learned / total) * 100}%` : '0%';
+            }
+            
+            // 显示通知
+            function showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-primary text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-x-full';
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                // 显示通知
+                setTimeout(() => {
+                    notification.classList.remove('translate-x-full');
+                }, 100);
+                
+                // 3秒后隐藏
+                setTimeout(() => {
+                    notification.classList.add('translate-x-full');
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+            
+            // 生成模拟拼音（仅用于示例）
+            function generateMockPinyin(word) {
+                // 这只是一个简单的模拟，实际应用中需要更复杂的拼音转换
+                return `/mɒk ˈpaɪnɪn/`;
+            }
+            
+            // 生成模拟音标（仅用于示例）
+            function generateMockPhonetic(word) {
+                // 这只是一个简单的模拟，实际应用中需要更复杂的音标转换
+                return `[mɒk fəˈnɛtɪk]`;
+            }
+            
+            // 播放单词发音（仅用于示例）
+            function playWordPronunciation(word) {
+                // 实际应用中可以使用语音合成API
+                console.log(`Playing pronunciation for: ${word}`);
+                
+                // 这只是一个模拟，不会实际播放声音
+                const speakerIcon = document.createElement('i');
+                speakerIcon.className = 'fa fa-volume-up text-secondary ml-2 animate-pulse';
+                pronunciationDisplay.appendChild(speakerIcon);
+                
+                setTimeout(() => {
+                    speakerIcon.remove();
+                }, 1000);
+            }
+            
+            // 初始化
+            updateProgress();
+        });
+    </script>
+</body>
+</html>    
